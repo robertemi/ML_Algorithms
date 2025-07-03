@@ -7,29 +7,32 @@ class Environment:
         self.goal_x = goal_x
         self.goal_y = goal_y  
         self.obstacles = set()
-
     def step(self, state, action):
         x, y = state
         new_x, new_y = x, y
+        goal = (self.goal_x, self.goal_y)
 
-        # Calculate new state based on action
-        if action == 'up' and x > 0:
-            new_x = x - 1
-        elif action == 'down' and x < self.width - 1:
-            new_x = x + 1
-        elif action == 'left' and y > 0:
-            new_y = y - 1
-        elif action == 'right' and y < self.height - 1:
-            new_y = y + 1
-
-        new_state = (new_x, new_y)
-
-        # Assign rewards
-        if new_state == self.goal:
-            reward = 100  # Goal reward
-        elif new_state in self.obstacles:
-            reward = -2   # Obstacle penalty
+        # Calculate intended new state based on action
+        if action == 'up' and y < self.height - 1:
+            intended_state = (x, y + 1)
+        elif action == 'down' and y > 0:
+            intended_state = (x, y - 1)
+        elif action == 'right' and x < self.width - 1:
+            intended_state = (x + 1, y)
+        elif action == 'left' and x > 0:
+            intended_state = (x - 1, y)
         else:
-            reward = -1   # Default move penalty
+            intended_state = (x, y)
+
+        # If intended state is obstacle, stay in place and apply penalty
+        if intended_state in self.obstacles:
+            new_state = (x, y)
+            reward = -50  # Obstacle penalty
+        elif intended_state == goal:
+            new_state = intended_state
+            reward = 100  # Goal reward
+        else:
+            new_state = intended_state
+            reward = -1  # Default move penalty
 
         return new_state, reward
