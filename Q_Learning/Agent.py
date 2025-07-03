@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-from Environment import Environment
 
 class Agent:
     def __init__(self, environment):
@@ -98,10 +97,13 @@ class Agent:
         return best_path
 
     
-    def path_visualization(self, best_path):
-        print(best_path)
+    def path_visualization(self, best_path, ax=None):
         width, height = self.environment.width, self.environment.height
-        fig, ax = plt.subplots(figsize=(width, height))
+
+        show_plot = False
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(width, height))
+            show_plot = True
 
         # Draw grid cells
         for x in range(width):
@@ -114,7 +116,7 @@ class Agent:
             x1, y1 = best_path[i]
             x2, y2 = best_path[i + 1]
             ax.arrow(x1 + 0.5, y1 + 0.5, x2 - x1, y2 - y1,
-                      head_width=0.2, length_includes_head=True, color='green')
+                    head_width=0.2, length_includes_head=True, color='green')
 
         # Mark start and goal
         sx, sy = self.environment.start_x, self.environment.start_y
@@ -129,7 +131,8 @@ class Agent:
         ax.set_xticks(np.arange(0, width + 1, 1))
         ax.set_yticks(np.arange(0, height + 1, 1))
         ax.grid(True)
-        plt.gca().invert_yaxis()  # Optional: keep origin at bottom-left
-        plt.title("Episode Paths (blue) and Learned Path (green)")
-        plt.show()
+        ax.invert_yaxis()  # Use ax, not plt.gca()
+        # Do not set title here if you want to set it outside
 
+        if show_plot:
+            plt.show()
