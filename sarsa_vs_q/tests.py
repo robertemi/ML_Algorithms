@@ -40,22 +40,3 @@ ax1.set_title("Q-Learning Best Path")
 sarsa.path_visualization(sarsa_best, ax=ax2)
 ax2.set_title("SARSA Best Path")
 plt.show()
-
-
-# q_successes = 0
-# for _ in range(100):
-#     path = q.get_best_path()
-#     if path[-1] == (env.goal_x, env.goal_y):
-#         q_successes += 1
-
-# q_success_rate = q_successes / 100
-
-# sarsa_successes = 0
-# for _ in range(100):
-#     path = sarsa.get_best_path()
-#     if path[-1] == (env.goal_x, env.goal_y):
-#         sarsa_successes += 1
-
-# sarsa_success_rate = sarsa_successes / 100
-
-# print(f"Q_Learning Success Rate: {q_success_rate:.2f}\nSARSA Success Rate: {sarsa_success_rate:.2f}")
