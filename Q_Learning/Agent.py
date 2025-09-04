@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import time
 
 class Agent:
     def __init__(self, environment):
@@ -12,10 +13,40 @@ class Agent:
         # Return 0.0 if (state, action) isn't in Q-table yet
         return self.q_table.get((state, action), 0.0)
     
-    # needs two policies, one for exploration and one for exploitation
 
-    # epsilon greedy policy for exploration
-    # epsilon from the interval [0.0, 1.0)
+    """
+    
+    Tau = temperature paramaeter; controls how uniform or concentrated the result probability distribution is (the one produced by softmax)
+    
+    Uses max shift trick in order to be stable 
+
+    """
+
+    def boltzmann_policy(self, state, tau):
+        if tau <= 0:
+            raise ValueError("tau must be > 0")
+
+        qs = np.array([self.q(state, a) for a in self.actions], dtype=float)
+        m = np.max(qs)
+        exps = np.exp((qs - m) / tau)
+
+        # softmax vector with probabilities for all actions
+        probs = exps / np.sum(exps)
+
+        # sample the action given the probs vector with the probabilities
+        return np.random.choice(self.actions, p=probs)
+    
+
+    """
+     
+     needs two policies, one for exploration and one for exploitation
+
+     epsilon greedy policy for exploration
+     epsilon from the interval [0.0, 1.0)
+
+    
+    """
+    
     def exploration_policy(self, state, epsilon):
         if np.random.random() < epsilon:
             return random.choice(self.actions)
@@ -25,6 +56,7 @@ class Agent:
 
             #get greedy action for current state
             return self.actions[np.argmax(q_values)]
+        
 
     # greedy policy used for explotation (after training)
     def exploitation_policy(self, state):
@@ -38,6 +70,9 @@ class Agent:
         Choose a random epsilon from (0, 1)
         Choose a random alpha (learning rate) from (0, 1)
         Choose a random gamma (discount factor) from (0, 1)
+    
+        Implemente using an epsilon greedy policy
+    
     '''
         
 
@@ -58,6 +93,42 @@ class Agent:
              while max_steps > 0 and current_state != (self.environment.goal_x, self.environment.goal_y):
                   max_steps -= 1
                   action = self.exploration_policy(current_state, epsilon)
+
+                  new_state, reward = self.environment.step(current_state, action)
+                  
+                  # get q value for the greedy action of the next state
+                  greedy_next_q = max([self.q(new_state, a) for a in self.actions])  
+
+                  # update q value accordingly to newly observed reward
+                  self.q_table[current_state, action] = self.q(current_state, action) + alpha * (reward + (gamma * greedy_next_q) - self.q(current_state, action)) 
+                  current_state = new_state
+                  path_per_episode.append(current_state)
+
+             all_paths.append(path_per_episode)     
+        return all_paths
+    
+
+    """
+    
+        Implemented using a Boltzmann policy
+    
+    """
+    def qLearn2(self, episodes, tau, alpha=0.1, gamma=0.9):
+        all_paths = []
+        
+        for _ in range(episodes):
+             current_state = (self.environment.start_x, self.environment.start_y)
+             
+             '''
+             Maximum number of steps per episode
+             The episode ends either when the agent reaches the goal or max_steps = 0
+             '''
+             max_steps = 100
+             # save the path for the episode 
+             path_per_episode = [current_state]
+             while max_steps > 0 and current_state != (self.environment.goal_x, self.environment.goal_y):
+                  max_steps -= 1
+                  action = self.boltzmann_policy(current_state, tau)
 
                   new_state, reward = self.environment.step(current_state, action)
                   
@@ -97,7 +168,7 @@ class Agent:
         return best_path
 
     
-    def path_visualization(self, best_path, ax=None):
+    def path_visualization(self, best_path, ax=None, save_path=None, show=False, dpi=150):
         width, height = self.environment.width, self.environment.height
 
         show_plot = False
@@ -134,5 +205,10 @@ class Agent:
         ax.invert_yaxis()  # Use ax, not plt.gca()
         # Do not set title here if you want to set it outside
 
-        if show_plot:
+        if save_path is None:
+            save_path = f"best_path_{int(time.time()*1000)}.png"  # unique per call
+
+        fig.savefig(save_path, bbox_inches="tight", dpi=dpi)
+        if show:
             plt.show()
+            return fig, ax
